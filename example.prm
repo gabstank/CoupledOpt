@@ -1,0 +1,382 @@
+# Listing of Parameters
+# ---------------------
+# Name of the analysis to prefix the output files.
+set Analysis name    = coupledopt
+
+# elasticityLin | elasticityNonLin | electroElasticityLin | normalModes | bimorphPiezoStatic
+set BVP Type         = elasticityLin
+
+# Destination path to write the output files.
+set Destination path = ./results/
+
+# Do you want to output mesh?
+set Mesh Output      = true
+
+# std | edd | opt ; i.e standard or embedded domain or optimization
+set Problem Type     = couple
+
+# Do you want to string output?
+set Verbose Output   = false
+
+# Number of space dimensions.
+set dim              = 2
+
+
+subsection Base
+  # Point 1: x,y,(z) (hyper_rectangle)
+  set Base Point1         = -0.7, -0.35
+  #set Base Point1         = -1.0, -0.5
+
+  # Point 2: x,y,(z) (hyper_rectangle)
+  set Base Point2         = 0.7, 0.35
+  #set Base Point2         = 1.0, 0.5
+
+  # Subdivision in : x,y,(z) (hyper_rectangle)
+  set Base Subdivisions = 6,3
+
+  # Number of global refinements
+  set Base refinements    = 5
+
+    # fixed | narrow
+  set Refinement criterion = fixed
+
+  # Fixed criterion: Number of tracking refinements
+  set Tracking refinements = 0
+
+  # Levels: [1,4]; 1 - use just vertices, 2:4 - additional test points
+  set Tracking precision = 2
+
+  # Desired narrow for mesh tracking.
+  set Desired narrow      = 0.05
+
+  # Refine boundary neighbours? true | false
+  set Extended refinement = false
+
+  # Used for energy harvesters - no refinement in the thickness direction
+  set Anisotropic refinement = false
+end
+
+
+subsection Domain
+  
+  # abaqus | hyper_rectangle | graded_hyper_rectangle | hyper_cube_with_hole |
+  # hook
+    set Geometry name = hyper_rectangle
+  
+  subsection Hyper Rectangle
+    # Point 1: x,y,(z) (hyper_rectangle)
+    set Hyper Rectangle Point1       = -0.6,-0.3
+
+    # Point 2: x,y,(z) (hyper_rectangle)
+    set Hyper Rectangle Point2       = 0.6,0.3
+
+    # Subdivision in : x,y,(z) (hyper_rectangle)
+    set Hyper Rectangle Subdivisions = 24,12
+
+    # Number of global refinements
+    set Hyper Rectangle refinements  = 0
+  end
+
+  subsection Boundary
+    # List of boundary IDs to assign to a boundary, if two boundaries satisfy
+    # the condition only the first shall survive
+    set Boundary IDs   = 1,1,2,2,5,5
+
+    # List of boundary components to be considered while deciding the boundary
+    # ID
+    set Boundary comp  = 0,1,0,1,0,1
+
+    # List of coordinates of the boundary, each value correspond to the
+    # component prescribed above.
+    set Boundary coord = -0.6,0.3,-0.6,-0.3,0.6,0.0
+
+    # List of tolerance for each value to satisfy
+    set Boundary tol   = 1e-4,0.08,1e-4,0.08,1e-4,0.04
+  end
+
+
+end
+
+subsection BVP
+  # Basis function polynomial degree
+  set Polynomial degree = 1
+
+
+  subsection Dirichlet BC
+    # List of Dirichlet IDs
+    set Dirichlet ID    = 1,1,2,2
+
+    # List of Dirichlet comp
+    set Dirichlet comp  = 0,1,0,1
+
+    # List of Dirichlet value
+    set Dirichlet value = 0,0,0,0
+  end
+
+  subsection Neumann BC
+    # List of Neumann IDs
+    set Neumann ID    = 5
+
+    # List of Dirichlet comp
+    set Neumann comp  = 1
+
+    # List of Neumann value
+    set Neumann value = 0.1
+  end
+  
+  
+  subsection Newton Raphson
+    # Max Newton Raphson Iteraions.
+    set Max Newton Iteration     = 100
+
+    # Number of Load Steps.
+    set Number of Load Steps     = 4
+
+    # Do you want to output each Newton Raphson iteration?
+    set Output Newton Raphson    = false
+
+    # Tolerance for error in Newton Raphson method.
+    set Tolerance Newton Raphson = 1e-6
+  end
+
+end
+
+subsection EDD BVP
+  # Number of quadrature points to consider for boundary cells
+  set Cut cell quadrature        = 10
+
+  # Penalty parameter for weak enforcement of essential boundary conditions
+  set Dirchlet Penalty           = 1e7
+
+  # Penalty for boundary cells gauss points outside domain
+  set Weak material contribution = 1e-4
+end
+
+
+subsection Material
+
+  # Name of Material law: StVenant, NeoHooke
+  set Material Law = NeoHooke
+
+  subsection Elastic isotropic
+    # Density
+    set density = 7.8e-6
+
+    # Lamé's first parameter
+    set lambda       = 7.5e4 #KPa 
+
+    # Lamé's second parameter, shear modulus sometimes denoted as G
+    set mu           = 3.75e4 # in KPa
+
+  end
+end
+
+
+subsection Solver
+  # Max number of iteration, actual max iter = no_of_rows * max_iter
+  set Max iterations            = 100
+
+  # Name of direct solver(use only direct sovler): Direct, Amesos_Mumps,
+  # Amesos_Umfpack
+  set Postprocessor Solver name = Mumps
+
+  # Tolerance for iterative solver: actual_tol = _system_rhs.l2_norm() *
+  # solver_tol
+  set Solver Tolerance          = 1e-9
+
+  # Name of solver: CG, Direct, Amesos_Mumps, Amesos_Umfpack
+  set Solver name               = Mumps
+end
+
+##########################################################################
+
+subsection Optimization
+
+  # SnOpt | AlMoM
+  set Optimizer type = AlMoM
+
+  subsection AlMoM
+
+    # Constraint violation tolerance (stopping criterion)
+    set Constraint violation tolerance            = 1e-4
+
+    # Convergence tolerance of an augmented lagrange subproblem (stopping
+    # criterion)
+    set AL subproblem convergence tolerance       = 1e-3
+
+    # Initial value of penalty in augmented lagrange function.
+    set Augmented lagrange penalty                = 1.0
+
+    # Initial value of Lagrange multiplier corresponding to inequality
+    # constraint
+    set Lagrange multiplier initial value         = 0.1
+    
+    # Armijo step length factor in backtracking algorithm.
+    set Armijo line search mu                     = 1e-3
+
+    # Initial shape step length for line search.
+    set Initial shape step length                 = 0.03
+
+    # Initial density step length for line search.
+    set Initial density step length               = 0.2
+
+    # Contraction factor for step length in backtracking algorithm.
+    set Step length contraction factor            = 0.5
+    
+    # Number of times lagrange multiplier should be updated [1, 50]
+    set Max number of lagrange multiplier updates = 50
+    
+    # Maximum number of augmented lagrange subproblem iterations
+    set Max number of AL subproblem iterations    = 500
+
+    # Max number of backtracking contractions
+    set Max number of contraction                 = 8
+
+  end
+
+  subsection Density-based optimization
+    # Initial value of design variables
+    set Initial density       = 0.5
+
+    # Starting value of the filter radius, should not be smaller than the
+    # target radius
+    set Initial filter radius = 0.02
+
+    # Initial penalization factor for intermediate densities
+    set Initial penalty       = 3.0
+
+    # Void threshold value for heuristice.
+    set Quasi void threshold  = 1e-2
+
+    # Solid threshold value for heuristics.
+    set Quasi solid threshold = 0.99
+
+    # Minimum density value.
+    set Minimum density       = 1.0e-3
+
+    # At what %of grey cells do you want to check for clusters.
+    set Grey cells threshold  = 0.1
+
+    # At what area of cluster should it be considered as a hole.
+    set Hole area threshold   = 0.0001
+
+    # Scaling factor for shape moving step, which projects the shape onto
+    # solid feature. [0.1, 0.5]
+    set Open void elimination factor = 0.2
+  end
+
+subsection Responses
+    # RHS of equality constraint.
+    set Constraints EQ         = 0.5
+
+    # Which responses are the constraints?
+    set Constraints IDs        = 1
+
+    # Which responses are the constraints?
+    set LB Constraints IDs     = 
+    
+    # Lower bounds for each constraint. Unbounded: -1e20
+    set Constraints LB         = 
+
+    # Which responses are the constraints?
+    set UB Constraints IDs     = 
+    
+    # Upper bounds for each constraint. Unbounded: 1e20
+    set Constraints UB         = 
+
+    # Which responses are the constraints?
+    set EQ Constraints IDs     = 1
+
+    # l2_norm | magnitude
+    set Gradient normalization = magnitude
+
+
+    # Which response is the objective?
+    set Objectives IDs           = 0
+
+    set Objectives weights        = 1.0
+
+    # compliance | volume ...
+    set Responses              = compliance, volume
+    
+  end
+
+  subsection Node-based optimization
+    
+    # Apply adaptive shape refinement?
+    set Adaptive shape refinement         = true
+
+    subsection Adaptive shape refinement options
+      # Expressed as a cosinus of normal vectors between two adjacent shape
+      # cells. [0.5, 1.0]
+      set Curvature threshold = 0.9
+
+      # Expressed as a multiplication of average element size of the initial
+      # design. [1.0, 10.0]
+      set Size threshold      = 1.5
+
+      set Minimum size ratio  = 0.2
+    end
+
+    # Bounding values for X
+    set Bounding box X values       = -0.6,0.6
+
+    # Bounding values for Y 
+    set Bounding box Y values       = -0.3,0.3
+
+    # Bounding values for Z 
+    set Bounding box Z values       = 
+
+    # List of non-design IDs
+    set Non-design ID               = 1,1,2,2,5,5
+
+    # List of non-design comp
+    set Non-design comp             = 0,1,0,1,0,1
+
+    # Number of repeated shape optimization runs with refined shape [0, 5]
+    set Number of shape refinements = 0
+
+    # none | x | y | z
+    set Sensitivity projection      = none
+
+    subsection Regularization Options
+      # Apply dual descent smoothing?: true or false
+      set Dual Descent Smoothing          = true
+
+      # Apply sensitivity weighting?: true or false
+      set Sensitivity Weighting           = false
+
+      # field | component
+      set Sensitivity Weighting Type      = component
+
+      # Sufficient decrease coefficient for dual descent smoothing: [0.0,
+      # 1.0]
+      set Sufficient Decrease Coefficient = 0.9
+
+
+      subsection Traction Method
+              
+        # Penalty constant (geometrical constraints)
+        set Penalty constant           = 1e9
+
+        # Normal spring constant (stiffness)
+        set Normal spring constant     = 1
+
+        # Tangent spring constant (stiffness)
+        set Tangent spring constant    = 0.5
+                
+        # Normal smoothing constant
+        set Normal smoothing constant  = 0.01
+
+        # Tangent smoothing constant
+        set Tangent smoothing constant = 0.02
+
+        # Apply regularization using traction method?: true or false
+        set Traction Method            = true
+      end
+
+    end
+
+  end
+
+end
